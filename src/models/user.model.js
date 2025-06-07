@@ -1,5 +1,5 @@
-import mongoose,{Schema} from mongoose;
-
+import mongoose,{Schema} from "mongoose";
+import bcrypt from "bcrypt";
 
 const userSchema=new Schema({
     username:{
@@ -19,14 +19,14 @@ const userSchema=new Schema({
         lowercase:true
     },
 
-    fullname:{
+    fullName:{
         type:String,
         required:true,
         trim:true,
         index:true
     },
 
-    avator:{
+    avatar:{
         type:String, //cloudinary url
         required:true
     },
@@ -38,8 +38,7 @@ const userSchema=new Schema({
 
     watchHistory:[
         {
-            type:Schema.Type.ObjectId,  //since we have to store the history from videos thats why we are 
-            // taking it in the form of array and we have to take id of obect from "video" model
+            type:Schema.Types.ObjectId,  //since we have to store the history from videos thats why we are // taking it in the form of array and we have to take id of obect from "video" model
             ref:"Video" //this means from Video we have to take 
         }
     ],
@@ -65,7 +64,7 @@ const userSchema=new Schema({
 // userSchema.pre("save",()=>{})  //in arrow function we cannot have access to this keyword that's why will write function
 userSchema.pre("save",async function(next){
     if(!this.isModified('password')) return next();
-    this.password=bcrypt.hash(this.password,10)  //save password
+    this.password=await bcrypt.hash(this.password,10)  //save password
     next()
 })
 

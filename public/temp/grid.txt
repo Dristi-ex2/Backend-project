@@ -1,0 +1,13 @@
+column-gap
+grip-template-column:repeat(1,3fr)
+grip-template-column:40%,20%,20%
+
+repeat(4,25%)
+grid-column-start
+grid-column:2/4
+2-start,4-end
+
+
+....for overlapping we will use position
+position-absolute,relative,fixed
+left,right,transform
