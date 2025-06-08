@@ -1,7 +1,7 @@
 import {asyncHandler} from "../utils/asyncHandler.js";
 import {ApiError} from '../utils/ApiError.js';
 import {User} from '../models/user.model.js';
-import {uploadImage} from '../utils/cloudinary.js';
+import {uploadOnCloudinary} from '../utils/cloudinary.js';
 import {ApiResponse} from '../utils/ApiResponse.js';
 
 //we have created asyncHandler in utils so that we dont need 
@@ -13,7 +13,7 @@ const registerUser= asyncHandler(async (req,res)=>{
 
     // Step 1: get user details from frontend
     const {fullName,email,username,password}=req.body
-    console.log("email:",email)
+    // console.log("email:",email)
 
     //Step 2: validation-not empty
     if([fullName,email,username,password].some((field)=>field?.trim()==="")){
@@ -27,17 +27,24 @@ const registerUser= asyncHandler(async (req,res)=>{
     if(existedUser.length>0){
         throw new ApiError(409,"User with email or username already exist");
     }
+
+    // console.log(req.files)
     //Step 4:check for images,check for avatar
     const avatarLocalPath=req.files?.avatar[0]?.path;
-    const coverImageLocalPath= req.files?.coverImage[0]?.path;
+    // const coverImageLocalPath= req.files?.coverImage[0]?.path;
+    let coverImageLocalPath;
+    if(req.files&&Array.isArray(req.files.coverImage)&&req.files.coverImage.length>0){
+        coverImageLocalPath=req.files.coverImage[0].path;
+    }
+
 
     if(!avatarLocalPath){
         throw new ApiError(400,"Avatar file is required")
     }
 
     //Step 5: upload them to cloudinary,avatar is uploaded or not
-   const avatar=await uploadImage(avatarLocalPath)
-   const coverImage=await uploadImage(coverImageLocalPath)
+   const avatar=await uploadOnCloudinary(avatarLocalPath)
+   const coverImage=await uploadOnCloudinary(coverImageLocalPath)
 
    
     if(!avatar){
