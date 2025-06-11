@@ -1,5 +1,6 @@
 import mongoose,{Schema} from "mongoose";
 import bcrypt from "bcrypt";
+import jwt from 'jsonwebtoken';
 
 const userSchema=new Schema({
     username:{
@@ -59,8 +60,8 @@ const userSchema=new Schema({
         timestamps:true  //gives the createdAt and UpdatedAt
     }
 )
-//logic to encrypt the password:
 
+//logic to encrypt the password:
 // userSchema.pre("save",()=>{})  //in arrow function we cannot have access to this keyword that's why will write function
 userSchema.pre("save",async function(next){
     if(!this.isModified('password')) return next();
@@ -81,7 +82,7 @@ userSchema.methods.generateAccessToken=function(){
             _id:this.id,
             email:this.email,
             username:this.username,
-            fullname:this.fullname
+            fullname:this.Fullname
         },
         process.env.ACCESS_TOKEN_SECRET,
         {
@@ -104,6 +105,8 @@ userSchema.methods.generateRefreshToken=function(){
     )
 }
 
+//the diffrence between access token and refresh token is:
+//access token live shorter and refresh token live longer
 
 
 
