@@ -194,66 +194,170 @@ const logoutUser = asyncHandler(async (req, res) => {
 });
 
 //code for refreshaccessToken
-const refreshAccessToken=asyncHandler(async(req,res)=>{
-    //Step1 
-   const incomingRefreshToken= req.cookies.refreshToken || req.body.refreshToken
-   if(!incomingRefreshToken){
-    throw new ApiError(401,"unauthorized request")
-   }
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  //Step1
+  const incomingRefreshToken =
+    req.cookies.refreshToken || req.body.refreshToken;
+  if (!incomingRefreshToken) {
+    throw new ApiError(401, "unauthorized request");
+  }
 
-   //Step2 :verify whether user refreshtoken is same as refreshtoken stored in out db
+  //Step2 :verify whether user refreshtoken is same as refreshtoken stored in out db
   try {
-     const decodedToken=jwt.verify(
+    const decodedToken = jwt.verify(
       incomingRefreshToken,
       process.env.REFRESH_TOKEN_SECRET
-     )
-  
-     const user= await User.findById(decodedToken?._id);
-  
-     if(!user){
-      throw new ApiError(401,"Invalid refresh token")
-     }
-  
-     if(incomingRefreshToken!==user?.refreshToken){
-      throw new ApiError(401,"Refresh token is expired or used")
-     }
-  
-     const options={
-      httpOnly:true,
-      secure:true
-     }
-  
-     const {accessToken,newrefreshToken}=await generateAccessTokenAndRefreshToken(user._id)
-     return res
-     .status
-     .cookie("accessToken",accessToken,options)
-     .cookie("refreshToken",newrefreshToken,options)
-     .json(
-      new ApiResponse(
+    );
+
+    const user = await User.findById(decodedToken?._id);
+
+    if (!user) {
+      throw new ApiError(401, "Invalid refresh token");
+    }
+
+    if (incomingRefreshToken !== user?.refreshToken) {
+      throw new ApiError(401, "Refresh token is expired or used");
+    }
+
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+
+    const { accessToken, newrefreshToken } =
+      await generateAccessTokenAndRefreshToken(user._id);
+    return res.status
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", newrefreshToken, options)
+      .json(
+        new ApiResponse(
           200,
-          {accessToken,refreshToken:newrefreshToken},
+          { accessToken, refreshToken: newrefreshToken },
           "AccessToken refreshed"
-      )
-     )
+        )
+      );
   } catch (error) {
-    throw new ApiError(401,error?.message|| "Invalid refresh Token")
+    throw new ApiError(401, error?.message || "Invalid refresh Token");
   }
-})
+});
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+//code to change current Password
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword, confirmpass } = req.body;
+  const user = await User.findById(req.user?._id);
+  const isPasswordCorrect = await user.isPasswordCorrect(oldPassword); //we are able to use user.isPasswordCorrect because
+  //isPasswprdCorrect is defined in user model as a method.
 
+  if (!(newPassword === confirmpass)) {
+    throw new ApiError(400, "Confirm password did not match");
+  }
 
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, " Invalid old password");
+  }
 
+  user.password = newPassword; //only set
+  await user.save({ validateBeforeSave: false });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password Changed successfully"));
+});
 
+//if user is logged in then getting current user
+const getCurrentUser = asyncHandler(async (req, res) => {
+  return res
+    .status(200)
+    .json(200, req.user, "current user fetched successfully");
+});
 
+//to update rest details of user
+const updateUserDetails = asyncHandler(async (req, res) => {
+  const { fullName, email } = req.body;
 
+  if (!fullName || !email) {
+    throw new ApiError(400, "All fields are required");
+  }
 
+  const user = User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        fullName,
+        email: email,
+      },
+    },
+    { new: true }
+  ).select("-password"); //it means dont include password
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Account details update successfully"));
+});
 
+//code to update avatar files
+const updateUserAvatar = asyncHandler(async (req, res) => {
+  // req.files  //files when multiple files can uploads
+  const avatarLocalPath = req.file?.path; //req.file is coming from multer middleware
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "Avatar file is missing");
+  }
 
+  const avatar = await uploadOnCloudinary(avatarLocalPath);
+  if (!avatar.url) {
+    throw new ApiError(400, "Error while uploading on avatar");
+  }
 
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        avatar: avatar.url,
+      },
+    },
+    { new: true }
+  ).select("-password");
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Avatar image updated successfully"));
+});
 
+//code to update cover image
+const updateUserCoverImage = asyncHandler(async (req, res) => {
+  // req.files  //files when multiple files can uploads
+  const coverImageLocalPath = req.file?.path; //req.file is coming from multer middleware
+  if (!coverImageLocalPath) {
+    throw new ApiError(400, "Cover image file is missing");
+  }
 
+  const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+  if (!coverImage.url) {
+    throw new ApiError(400, "Error while uploading on avatar");
+  }
 
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        coverImage: coverImage.url,
+      },
+    },
+    { new: true }
+  ).select("-password");
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Cover image updated successfully"));
+});
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentPassword,
+  getCurrentUser,
+  updateUserDetails,
+  updateUserAvatar,
+  updateUserCoverImage,
+};
 
 //regiterUser
 
@@ -267,7 +371,7 @@ export { registerUser, loginUser, logoutUser, refreshAccessToken };
 //Step 8: check for user creation
 //Step 9: if user created return res else return error
 
-//Loginregister
+//Login register
 
 //Step 1: bring data from req body:req body->data
 //Step 2: username or email

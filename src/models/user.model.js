@@ -105,10 +105,7 @@ userSchema.methods.generateRefreshToken=function(){
     )
 }
 
-//the diffrence between access token and refresh token is:
-//access token live shorter and refresh token live longer
-
-
+//the diffrence between access token and refresh token is: access token live shorter and refresh token live longer
 
 export const User=mongoose.model("User",userSchema)
 //Now notice that we are using "const User"..User is capital letter because it will go to refernce so necessary to keep in capital letter
