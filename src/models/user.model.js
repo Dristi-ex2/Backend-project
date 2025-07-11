@@ -64,10 +64,22 @@ const userSchema=new Schema({
 //logic to encrypt the password:
 // userSchema.pre("save",()=>{})  //in arrow function we cannot have access to this keyword that's why will write function
 userSchema.pre("save",async function(next){
+      
+    
+    // If password is already hashed or unchanged, skip hashing
     if(!this.isModified('password')) return next();
-    this.password=await bcrypt.hash(this.password,10)  //save password
+
+    // 1. Generate a salt (random string)
+    const salt = await bcrypt.genSalt(10);
+
+    // 2. Hash the password with that salt
+    this.password = await bcrypt.hash(this.password, salt);
+
+
+    // 3. Continue saving
     next()
 })
+
 
 //to check pwd is correct or not
 userSchema.methods.isPasswordCorrect=async function (password){

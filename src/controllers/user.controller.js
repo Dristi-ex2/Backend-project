@@ -36,9 +36,7 @@ const registerUser = asyncHandler(async (req, res) => {
   // console.log("email:",email)
 
   //Step 2: validation-not empty
-  if (
-    [fullName, email, username, password].some((field) => field?.trim() === "")
-  ) {
+  if ([fullName, email, username, password].some((field) => field?.trim() === "")) {
     throw new ApiError(
       400,
       "All fields (fullName, email, username, password) are required"
@@ -52,8 +50,8 @@ const registerUser = asyncHandler(async (req, res) => {
   if (existedUser.length > 0) {
     throw new ApiError(409, "User with email or username already exist");
   }
-
   // console.log(req.files)
+
   //Step 4:check for images,check for avatar
   const avatarLocalPath = req.files?.avatar[0]?.path;
   // const coverImageLocalPath= req.files?.coverImage[0]?.path;
@@ -70,7 +68,7 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Avatar file is required");
   }
 
-  //Step 5: upload them to cloudinary,avatar is uploaded or not
+  //Step 5: upload them to cloudinary,and check whether avatar is uploaded or not
   const avatar = await uploadOnCloudinary(avatarLocalPath);
   //    const coverImage=await uploadOnCloudinary(coverImageLocalPath)
   const coverImage = coverImageLocalPath
@@ -109,6 +107,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 //code to login user
 const loginUser = asyncHandler(async (req, res) => {
+
   //Step 1: bring data from req body:req body->data
   const { username, password, email } = req.body;
 
@@ -135,8 +134,7 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   //Step 5: access and refresh token
-  const { accessToken, refreshToken } =
-    await generateAccessTokenAndRefreshToken(user._id);
+  const { accessToken, refreshToken } =await generateAccessTokenAndRefreshToken(user._id);
 
   //Step 6: send cookie
   const loggedInUser = await User.findById(user._id).select(
